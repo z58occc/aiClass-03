@@ -10,3 +10,5 @@ playwright-report/
 dist/
 .DS_Store
 .playwright-mcp/
+package-lock.json
+frontend/.claude/
