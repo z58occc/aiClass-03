@@ -54,8 +54,8 @@
 | GET | `/api/health` | → `{data: {status: "ok"}}`（CI wait-on 用） | 200 |
 | GET | `/api-docs` | Swagger UI 文件頁 | 200 |
 | GET | `/openapi.json` | OpenAPI 3.0.3 文件（內容與 `backend/openapi.json` 相同） | 200 |
-| POST | `/api/auth/register` | `{email, password, name}` → `{data: {token, user}}`（一律建立 `role: member`） | 201 |
-| POST | `/api/auth/login` | `{email, password}` → `{data: {token, user}}` | 200 |
+| POST | `/api/auth/register` | `{email, password, name}` → `{data: {token, user}}`（一律建立 `role: member`；`user` 為 `{id, email, name, role}`） | 201 |
+| POST | `/api/auth/login` | `{email, password}` → `{data: {token, user}}`（`user` 含 `role`，僅供前端控制顯示，權限仍由後端判斷） | 200 |
 | GET | `/api/products` | → `{data: Product[]}` | 200 |
 | GET | `/api/coupons` | → `{data: Coupon[]}`（預設只列啟用中）。`?includeInactive=true` 一併列出停用券，**需 admin** | 200 |
 | GET | `/api/coupons/:code` | → `{data: Coupon}`；已停用視同不存在（404） | 200 |

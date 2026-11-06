@@ -22,10 +22,14 @@ export class ApiError extends Error {
 
 // ---------- 型別定義（對齊 AGENTS.md API 契約，欄位使用 camelCase） ----------
 
+export type UserRole = 'member' | 'admin'
+
 export interface User {
   id: number
   email: string
   name: string
+  /** 僅供前端控制顯示；真正的權限判斷由後端負責 */
+  role: UserRole
 }
 
 export interface AuthResult {
@@ -47,39 +51,64 @@ export interface CartItemPayload {
   quantity: number
 }
 
+/** 試算回傳的券規則（CouponRule） */
 export interface CouponInfo {
   code: string
-  percentOff?: number
-  maxDiscount?: number
-  minSpend?: number
+  percentOff: number
+  maxDiscount: number
+  minSpend: number
 }
 
-/** 優惠券試算結果：金額一律以後端回傳為準 */
+/** 優惠券完整資料（Coupon）；usageLimit 為 null 代表不限次數 */
+export interface Coupon extends CouponInfo {
+  id: number
+  usageLimit: number | null
+  usedCount: number
+  isActive: boolean
+}
+
+/** 建立優惠券（CreateCouponRequest） */
+export interface CreateCouponPayload {
+  code: string
+  percentOff: number
+  maxDiscount: number
+  minSpend: number
+  usageLimit?: number | null
+  isActive?: boolean
+}
+
+/** 更新優惠券（UpdateCouponRequest）：不可改 code／usedCount */
+export type UpdateCouponPayload = Partial<Omit<CreateCouponPayload, 'code'>>
+
+/** 優惠券試算結果：金額一律以後端回傳為準；未帶券時 coupon 為 null */
 export interface PreviewResult {
   subtotal: number
   discount: number
   total: number
-  coupon?: CouponInfo
+  coupon: CouponInfo | null
 }
 
-export type OrderStatus = 'pending' | 'paid' | string
+export type OrderStatus = 'pending' | 'paid' | 'failed'
 
 export interface OrderItem {
   productId: number
-  name?: string
+  name: string
   unitPrice: number
   quantity: number
 }
 
 export interface Order {
-  id: number | string
+  id: number
+  userId: number
+  couponId: number | null
   status: OrderStatus
   subtotal: number
   discount: number
   total: number
-  couponCode?: string | null
-  items?: OrderItem[]
-  createdAt?: string
+  merchantTradeNo: string | null
+  createdAt: string
+  paidAt: string | null
+  items: OrderItem[]
 }
 
 // ---------- fetch wrapper ----------
@@ -150,6 +179,33 @@ export function login(payload: { email: string; password: string }): Promise<Aut
 /** 商品列表：GET /api/products */
 export function fetchProducts(): Promise<Product[]> {
   return request<Product[]>('/api/products')
+}
+
+/** 優惠券列表：GET /api/coupons（includeInactive 需 admin） */
+export function fetchCoupons(includeInactive = false): Promise<Coupon[]> {
+  const query = includeInactive ? '?includeInactive=true' : ''
+  return request<Coupon[]>(`/api/coupons${query}`)
+}
+
+/** 單張優惠券：GET /api/coupons/:code（已停用視同不存在 404） */
+export function fetchCoupon(code: string): Promise<Coupon> {
+  return request<Coupon>(`/api/coupons/${encodeURIComponent(code)}`)
+}
+
+/** 建立優惠券：POST /api/coupons（需 admin） */
+export function createCoupon(payload: CreateCouponPayload): Promise<Coupon> {
+  return request<Coupon>('/api/coupons', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/** 更新優惠券：PATCH /api/coupons/:id（需 admin；停用用 isActive:false） */
+export function updateCoupon(id: number, payload: UpdateCouponPayload): Promise<Coupon> {
+  return request<Coupon>(`/api/coupons/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
 }
 
 /** 優惠券試算：POST /api/coupons/preview（無券時也可呼叫取得 subtotal） */

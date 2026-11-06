@@ -8,6 +8,9 @@ export const UserSchema = z
     id: z.number().int().openapi({ example: 1 }),
     email: z.email().openapi({ example: 'user@example.com' }),
     name: z.string().openapi({ example: '測試會員' }),
+    role: z
+      .enum(['member', 'admin'])
+      .openapi({ example: 'member', description: '僅供前端控制顯示；權限仍由後端每次查 DB 判斷' }),
   })
   .openapi('User');
 

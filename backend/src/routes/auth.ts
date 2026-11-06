@@ -13,6 +13,7 @@ interface UserRow {
   email: string;
   password_hash: string;
   name: string;
+  role: 'member' | 'admin';
 }
 
 /** 簽發 JWT（payload 只放 userId） */
@@ -45,7 +46,7 @@ router.post('/register', validateBody(RegisterRequestSchema), (req, res) => {
   res.status(201).json({
     data: {
       token: signToken(userId),
-      user: { id: userId, email, name },
+      user: { id: userId, email, name, role: 'member' as const },
     },
     message: '註冊成功',
   });
@@ -66,7 +67,7 @@ router.post('/login', (req, res) => {
   res.json({
     data: {
       token: signToken(user.id),
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
     },
     message: '登入成功',
   });

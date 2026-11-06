@@ -22,6 +22,8 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLoggedIn: (state) => state.token !== '',
+    /** 僅控制顯示與導頁；舊的 localStorage 資料沒有 role 時視為非 admin。後端仍會驗證權限 */
+    isAdmin: (state) => state.token !== '' && state.user?.role === 'admin',
   },
   actions: {
     /** 寫入 token 與 user 並持久化 */

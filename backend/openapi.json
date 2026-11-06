@@ -87,12 +87,22 @@
           "name": {
             "type": "string",
             "example": "測試會員"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "admin"
+            ],
+            "example": "member",
+            "description": "僅供前端控制顯示；權限仍由後端每次查 DB 判斷"
           }
         },
         "required": [
           "id",
           "email",
-          "name"
+          "name",
+          "role"
         ]
       },
       "AuthResult": {

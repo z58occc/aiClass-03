@@ -34,6 +34,14 @@ function handleLogout() {
               class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-xs font-semibold text-white"
             >{{ cart.count }}</span>
           </RouterLink>
+          <RouterLink
+            v-if="auth.isAdmin"
+            to="/admin"
+            data-testid="nav-admin"
+            class="text-gray-600 transition hover:text-rose-600"
+          >
+            後台
+          </RouterLink>
           <template v-if="auth.isLoggedIn">
             <span class="hidden text-gray-500 sm:inline">{{ auth.user?.name }}，您好</span>
             <button

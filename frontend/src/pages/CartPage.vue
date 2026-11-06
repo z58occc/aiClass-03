@@ -1,77 +1,25 @@
 <script setup lang="ts">
 // 購物車頁：品項調整、優惠券試算；金額一律顯示後端 preview 回傳值
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ApiError, previewCoupon, type PreviewResult } from '../api/client'
+import CouponBox from '../components/CouponBox.vue'
+import { useCouponPreview } from '../composables/useCouponPreview'
 import { useCartStore } from '../stores/cart'
 
 const router = useRouter()
 const cart = useCartStore()
 
-const couponInput = ref(cart.couponCode)
-const couponError = ref('')
-const amounts = ref<PreviewResult | null>(null)
-const loading = ref(false)
-
-/**
- * 向後端試算金額（無券時也呼叫以取得 subtotal）。
- * 若已套用的優惠券失效（如低消不足），顯示錯誤並改用無券試算。
- */
-async function refreshPreview() {
-  if (cart.items.length === 0) {
-    amounts.value = null
-    return
-  }
-  loading.value = true
-  try {
-    amounts.value = await previewCoupon({
-      items: cart.itemsPayload,
-      code: cart.couponCode || undefined,
-    })
-  } catch (err) {
-    if (err instanceof ApiError && cart.couponCode) {
-      // 已套用的券在目前金額下不可用：顯示原因並退回無券試算
-      couponError.value = err.message
-      cart.setCouponCode('')
-      try {
-        amounts.value = await previewCoupon({ items: cart.itemsPayload })
-      } catch {
-        amounts.value = null
-      }
-    } else {
-      couponError.value = err instanceof ApiError ? err.message : '金額試算失敗，請稍後再試'
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-/** 套用優惠券：成功才寫入 store；失敗顯示錯誤並退回無券試算 */
-async function applyCoupon() {
-  couponError.value = ''
-  const code = couponInput.value.trim()
-  if (!code || cart.items.length === 0) return
-  try {
-    amounts.value = await previewCoupon({ items: cart.itemsPayload, code })
-    cart.setCouponCode(code)
-  } catch (err) {
-    couponError.value = err instanceof ApiError ? err.message : '套用優惠券失敗，請稍後再試'
-    if (cart.couponCode) cart.setCouponCode('')
-    try {
-      amounts.value = await previewCoupon({ items: cart.itemsPayload })
-    } catch {
-      // 保留原金額顯示
-    }
-  }
-}
-
-/** 移除已套用的優惠券 */
-async function removeCoupon() {
-  couponError.value = ''
-  couponInput.value = ''
-  cart.setCouponCode('')
-  await refreshPreview()
-}
+const {
+  couponInput,
+  couponError,
+  amounts,
+  loading,
+  availableCoupons,
+  loadAvailableCoupons,
+  refreshPreview,
+  applyCoupon,
+  removeCoupon,
+} = useCouponPreview()
 
 /** 數量輸入框變更 */
 function onQuantityInput(productId: number, event: Event) {
@@ -94,7 +42,10 @@ watch(
   },
 )
 
-onMounted(refreshPreview)
+onMounted(() => {
+  refreshPreview()
+  loadAvailableCoupons()
+})
 </script>
 
 <template>
@@ -159,35 +110,14 @@ onMounted(refreshPreview)
 
       <!-- 優惠券與金額摘要 -->
       <aside class="space-y-4">
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="mb-3 font-semibold">優惠券</h2>
-          <div class="flex gap-2">
-            <input
-              v-model="couponInput"
-              data-testid="coupon-input"
-              type="text"
-              placeholder="輸入優惠券代碼"
-              class="w-full flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-100"
-            />
-            <button
-              type="button"
-              data-testid="apply-coupon"
-              class="shrink-0 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700"
-              @click="applyCoupon"
-            >
-              套用
-            </button>
-          </div>
-          <p v-if="couponError" data-testid="coupon-error" class="mt-2 text-sm text-red-600">
-            {{ couponError }}
-          </p>
-          <p v-else-if="cart.couponCode" data-testid="coupon-applied" class="mt-2 flex items-center gap-2 text-sm text-green-600">
-            已套用優惠券：{{ cart.couponCode }}
-            <button type="button" data-testid="remove-coupon" class="text-xs text-gray-400 underline hover:text-red-600" @click="removeCoupon">
-              取消
-            </button>
-          </p>
-        </div>
+        <CouponBox
+          v-model="couponInput"
+          :error="couponError"
+          :applied-code="cart.couponCode"
+          :available-coupons="availableCoupons"
+          @apply="applyCoupon"
+          @remove="removeCoupon"
+        />
 
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 class="mb-3 font-semibold">金額明細</h2>

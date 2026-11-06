@@ -167,7 +167,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
+              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\",\n      \"role\": \"member\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -361,7 +361,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
+              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\",\n      \"role\": \"member\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
@@ -511,7 +511,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
+              "body": "{\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"name\": \"測試會員\",\n      \"role\": \"member\"\n    }\n  },\n  \"message\": \"操作成功\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },

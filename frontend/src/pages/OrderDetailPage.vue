@@ -22,6 +22,8 @@ const statusLabel = computed(() => {
       return '待付款'
     case 'paid':
       return '已付款'
+    case 'failed':
+      return '付款失敗'
     default:
       return order.value?.status ?? ''
   }
@@ -110,12 +112,12 @@ onUnmounted(stopPolling)
         <h2 class="mb-3 font-semibold">訂單品項</h2>
         <ul class="divide-y divide-gray-100 text-sm">
           <li
-            v-for="item in order.items ?? []"
+            v-for="item in order.items"
             :key="item.productId"
             class="flex items-center justify-between py-2"
           >
             <span>
-              {{ item.name ?? `商品 #${item.productId}` }}
+              {{ item.name }}
               <span class="text-gray-400">× {{ item.quantity }}</span>
             </span>
             <span class="text-gray-600">NT$ {{ item.unitPrice * item.quantity }}</span>
@@ -128,19 +130,29 @@ onUnmounted(stopPolling)
         <div class="space-y-2 text-sm">
           <div class="flex items-center justify-between">
             <span class="text-gray-500">小計</span>
-            <span class="text-gray-700">NT$ {{ order.subtotal }}</span>
+            <span class="flex items-baseline gap-1 text-gray-700">
+              <span>NT$</span>
+              <span data-testid="subtotal">{{ order.subtotal }}</span>
+            </span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-500">折扣</span>
-            <span class="text-green-600">−NT$ {{ order.discount }}</span>
+            <span class="flex items-baseline gap-1 text-green-600">
+              <span>−NT$</span>
+              <span data-testid="discount">{{ order.discount }}</span>
+            </span>
           </div>
           <div class="flex items-center justify-between border-t border-gray-100 pt-2 text-base">
             <span class="font-semibold">總計</span>
-            <span class="text-lg font-bold text-rose-600">NT$ {{ order.total }}</span>
+            <span class="flex items-baseline gap-1 text-rose-600">
+              <span>NT$</span>
+              <span data-testid="total" class="text-lg font-bold">{{ order.total }}</span>
+            </span>
           </div>
         </div>
-        <p v-if="order.couponCode" class="mt-3 text-sm text-green-600">
-          已使用優惠券：{{ order.couponCode }}
+        <!-- 訂單契約只回傳 couponId（不含代碼），故僅標示有使用優惠券 -->
+        <p v-if="order.couponId !== null" data-testid="order-coupon" class="mt-3 text-sm text-green-600">
+          此訂單已使用優惠券
         </p>
       </section>
 

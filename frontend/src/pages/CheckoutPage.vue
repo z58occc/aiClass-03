@@ -2,21 +2,34 @@
 // 結帳頁：顯示後端 preview 金額，確認付款後建立訂單並導向綠界付款
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  ApiError,
-  checkoutOrder,
-  createOrder,
-  previewCoupon,
-  type PreviewResult,
-} from '../api/client'
+import { ApiError, checkoutOrder, createOrder } from '../api/client'
+import CouponBox from '../components/CouponBox.vue'
+import { useCouponPreview } from '../composables/useCouponPreview'
 import { useCartStore } from '../stores/cart'
 
 const router = useRouter()
 const cart = useCartStore()
 
-const amounts = ref<PreviewResult | null>(null)
+const {
+  couponInput,
+  couponError,
+  amounts,
+  availableCoupons,
+  loadAvailableCoupons,
+  refreshPreview,
+  applyCoupon,
+  removeCoupon,
+} = useCouponPreview()
+
 const errorMessage = ref('')
 const submitting = ref(false)
+
+/** 建單時與優惠券有關的錯誤：需移除券並重新試算，讓使用者以無券金額再確認 */
+const COUPON_ERROR_CODES = [
+  'COUPON_USAGE_LIMIT_REACHED',
+  'COUPON_MIN_SPEND_NOT_MET',
+  'COUPON_NOT_FOUND',
+]
 
 onMounted(async () => {
   // 空購物車直接回購物車頁
@@ -24,14 +37,8 @@ onMounted(async () => {
     router.replace('/cart')
     return
   }
-  try {
-    amounts.value = await previewCoupon({
-      items: cart.itemsPayload,
-      code: cart.couponCode || undefined,
-    })
-  } catch (err) {
-    errorMessage.value = err instanceof ApiError ? err.message : '金額試算失敗，請稍後再試'
-  }
+  await refreshPreview()
+  loadAvailableCoupons()
 })
 
 /**
@@ -55,8 +62,14 @@ async function handleCheckout() {
     document.write(html)
     document.close()
   } catch (err) {
-    // 例如庫存不足（INSUFFICIENT_STOCK）、優惠券不可用等
+    // 例如庫存不足（INSUFFICIENT_STOCK）、優惠券不可用等；購物車保留不清空
     errorMessage.value = err instanceof ApiError ? err.message : '結帳失敗，請稍後再試'
+    if (err instanceof ApiError && COUPON_ERROR_CODES.includes(err.code)) {
+      // 券在建單當下已不可用（例如額度被搶完）：移除券並以無券金額重新試算
+      cart.setCouponCode('')
+      couponInput.value = ''
+      await refreshPreview()
+    }
     submitting.value = false
   }
 }
@@ -83,10 +96,16 @@ async function handleCheckout() {
             <span class="text-gray-600">NT$ {{ item.price * item.quantity }}</span>
           </li>
         </ul>
-        <p v-if="cart.couponCode" class="mt-3 text-sm text-green-600">
-          已套用優惠券：{{ cart.couponCode }}
-        </p>
       </section>
+
+      <CouponBox
+        v-model="couponInput"
+        :error="couponError"
+        :applied-code="cart.couponCode"
+        :available-coupons="availableCoupons"
+        @apply="applyCoupon"
+        @remove="removeCoupon"
+      />
 
       <!-- 金額摘要（後端 preview 回傳值） -->
       <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -114,7 +133,7 @@ async function handleCheckout() {
             </span>
           </div>
         </div>
-        <p v-else-if="!errorMessage" class="text-sm text-gray-400">金額試算中…</p>
+        <p v-else-if="!errorMessage && !couponError" class="text-sm text-gray-400">金額試算中…</p>
 
         <p v-if="errorMessage" data-testid="checkout-error" class="mt-3 text-sm text-red-600">
           {{ errorMessage }}
